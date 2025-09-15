@@ -25,12 +25,20 @@ EOF
 }
 
 prerequisites() {
-	command -v cowsay >/dev/null 2>&1 &&
-	command -v fortune >/dev/null 2>&1 || 
-		{ 
-			echo "Install prerequisites."
-			exit 1
-		}
+	if ! command -v cowsay >/dev/null 2>&1; then
+		echo "cowsay is missing. Install prerequisites."
+		exit 1
+	fi
+
+	if ! command -v fortune >/dev/null 2>&1; then
+		echo "fortune is missing. Install prerequisites."
+		exit 1
+	fi
+
+	if ! command -v nc >/dev/null 2>&1; then
+		echo "netcat (nc) is missing. Install prerequisites."
+		exit 1
+	fi
 }
 
 main() {
