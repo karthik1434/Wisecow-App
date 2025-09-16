@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: wisecow-app
+  namespace: argocd
+spec:
+  project: default
+
+  # Git repository containing your manifests
+  source:
+    repoURL: https://github.com/karthik1434/Wisecow-App.git
+    targetRevision: main   # branch to track
+    path: k8s              # folder containing deployment.yaml & service.yaml
+
+  # Destination cluster and namespace
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: wisecow
+
+  # Automatic sync
+  syncPolicy:
+    automated:
+      prune: true        # remove resources deleted from git
+      selfHeal: true     # fix any drift automatically
+    syncOptions:
+      - CreateNamespace=true   # create namespace if missing
+
+  # Optional: ignore image tag differences if you update Docker image manually
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/template/spec/containers/0/image
