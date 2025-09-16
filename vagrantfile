@@ -1,0 +1,85 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/focal64"
+  config.vm.box_check_update = false
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "6144"   # Increased RAM for Argo CD + Kubernetes
+    vb.cpus = 2
+  end
+
+  config.vm.define "kmaster" do |kmaster|
+    kmaster.vm.hostname = "kmaster"
+    kmaster.vm.network "private_network", ip: "192.168.56.10"
+
+    kmaster.vm.provision "shell", inline: <<-SHELL
+      set -e
+
+      # Update and install dependencies
+      sudo apt-get update -y
+      sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release docker.io
+
+      # Add Kubernetes repo
+      sudo mkdir -p /etc/apt/keyrings
+      curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+      # Install kubeadm, kubelet, kubectl
+      sudo apt-get update -y
+      sudo apt-get install -y kubelet kubeadm kubectl
+      sudo apt-mark hold kubelet kubeadm kubectl
+
+      # Enable Docker
+      sudo systemctl enable docker
+      sudo systemctl start docker
+
+      # Initialize Kubernetes cluster
+      sudo kubeadm init --apiserver-advertise-address=192.168.56.10 --pod-network-cidr=192.168.0.0/16
+
+      # Setup kubeconfig for vagrant user
+      mkdir -p /home/vagrant/.kube
+      sudo cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
+      sudo chown vagrant:vagrant /home/vagrant/.kube/config
+      export KUBECONFIG=/home/vagrant/.kube/config
+
+      # Allow master to run workloads
+      sudo -u vagrant kubectl taint nodes --all node-role.kubernetes.io/control-plane- || true
+
+      # Wait until Kubernetes API server is ready
+      echo "Waiting for Kubernetes API server..."
+      until kubectl get nodes &>/dev/null; do
+        echo "API server not ready, sleeping 5s..."
+        sleep 5
+      done
+      echo "Kubernetes API is ready."
+
+      # Install Calico CNI
+      sudo -u vagrant kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml
+
+      # Wait for all Calico pods to be Ready
+      echo "Waiting for Calico pods..."
+      until [ $(kubectl get pods -n kube-system -l k8s-app=calico-node -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep false | wc -l) -eq 0 ]; do
+        echo "Still waiting for Calico..."
+        sleep 5
+      done
+      echo "Calico is ready!"
+
+      # Install Argo CD minimal
+      sudo -u vagrant kubectl create namespace argocd || true
+      sudo -u vagrant kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/argo-cd-minimal.yaml
+
+      # Wait for Argo CD pods to be Ready
+      echo "Waiting for Argo CD pods..."
+      until [ $(kubectl get pods -n argocd -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep false | wc -l) -eq 0 ]; do
+        echo "Still waiting for Argo CD..."
+        sleep 5
+      done
+      echo "Argo CD is ready!"
+
+      echo "Cluster setup complete. Access Argo CD UI via port-forward:"
+      echo "kubectl port-forward svc/argocd-server -n argocd 8080:443"
+      # From your host machine
+      vagrant scp wisecow-argo-application.yaml kmaster:/home/vagrant/
+
+    SHELL
+  end
+end

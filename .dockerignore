@@ -1,0 +1,6 @@
+.github
+.git
+.vagrant
+vagrantfile
+k8s
+wisecow-argo-application.yaml
