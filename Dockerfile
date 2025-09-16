@@ -1,23 +1,27 @@
+# Use an official Ubuntu base image
 FROM ubuntu:22.04
 
-# Prevent interactive prompts during package install
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install required packages
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     fortune-mod \
     cowsay \
     netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy your script into container
-COPY wisecow.sh /wisecow.sh
+# Add /usr/games to PATH (for cowsay & fortune)
+ENV PATH="$PATH:/usr/games"
 
-# Make script executable
-RUN chmod +x /wisecow.sh
+# Set working directory
+WORKDIR /app
 
-# Expose the port your app listens on
+# Copy your script into the container
+COPY wisecow.sh .
+
+# Make it executable
+RUN chmod +x wisecow.sh
+
+# Expose the service port
 EXPOSE 4499
 
 # Run the script
-CMD ["/wisecow.sh"]
+CMD ["./wisecow.sh"]
