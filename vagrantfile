@@ -3,13 +3,16 @@ Vagrant.configure("2") do |config|
   config.vm.box_check_update = false
 
   config.vm.provider "virtualbox" do |vb|
-    vb.memory = "6144"   # Increased RAM for Argo CD + Kubernetes
+    vb.memory = "4096"
     vb.cpus = 2
   end
 
   config.vm.define "kmaster" do |kmaster|
     kmaster.vm.hostname = "kmaster"
     kmaster.vm.network "private_network", ip: "192.168.56.10"
+
+    # Sync Wisecow-App folder to VM
+    config.vm.synced_folder ".", "/vagrant"
 
     kmaster.vm.provision "shell", inline: <<-SHELL
       set -e
@@ -41,45 +44,42 @@ Vagrant.configure("2") do |config|
       sudo chown vagrant:vagrant /home/vagrant/.kube/config
       export KUBECONFIG=/home/vagrant/.kube/config
 
-      # Allow master to run workloads
+      # Allow workloads on master
       sudo -u vagrant kubectl taint nodes --all node-role.kubernetes.io/control-plane- || true
 
-      # Wait until Kubernetes API server is ready
-      echo "Waiting for Kubernetes API server..."
-      until kubectl get nodes &>/dev/null; do
-        echo "API server not ready, sleeping 5s..."
+      echo "=== Waiting for Kubernetes API ==="
+      until sudo -u vagrant kubectl get nodes &>/dev/null; do
+        echo "API not ready, sleeping..."
         sleep 5
       done
-      echo "Kubernetes API is ready."
 
-      # Install Calico CNI
+      # Install Calico
       sudo -u vagrant kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml
 
-      # Wait for all Calico pods to be Ready
-      echo "Waiting for Calico pods..."
-      until [ $(kubectl get pods -n kube-system -l k8s-app=calico-node -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep false | wc -l) -eq 0 ]; do
+      echo "=== Waiting for Calico pods ==="
+      until [ $(sudo -u vagrant kubectl get pods -n kube-system -l k8s-app=calico-node --no-headers 2>/dev/null | wc -l) -gt 0 ] && \
+            [ $(sudo -u vagrant kubectl get pods -n kube-system -l k8s-app=calico-node -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -c false || true) -eq 0 ]; do
         echo "Still waiting for Calico..."
         sleep 5
       done
       echo "Calico is ready!"
 
-      # Install Argo CD minimal
-      sudo -u vagrant kubectl create namespace argocd || true
-      sudo -u vagrant kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/argo-cd-minimal.yaml
+      # Install Argo CD (minimal)
+     sudo -u vagrant kubectl create namespace argocd || true
+     sudo -u vagrant kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
-      # Wait for Argo CD pods to be Ready
-      echo "Waiting for Argo CD pods..."
-      until [ $(kubectl get pods -n argocd -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep false | wc -l) -eq 0 ]; do
+      echo "=== Waiting for Argo CD pods ==="
+      until [ $(sudo -u vagrant kubectl get pods -n argocd --no-headers 2>/dev/null | wc -l) -gt 0 ] && \
+            [ $(sudo -u vagrant kubectl get pods -n argocd -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -c false || true) -eq 0 ]; do
         echo "Still waiting for Argo CD..."
         sleep 5
       done
       echo "Argo CD is ready!"
 
-      echo "Cluster setup complete. Access Argo CD UI via port-forward:"
-      echo "kubectl port-forward svc/argocd-server -n argocd 8080:443"
-      # From your host machine
-      vagrant scp wisecow-argo-application.yaml kmaster:/home/vagrant/
+      # Deploy Wisecow app via ArgoCD Application manifest
+      sudo -u vagrant kubectl apply -f /vagrant/wisecow-argo-application.yaml
 
+      echo "=== Cluster + ArgoCD + Wisecow setup complete ==="
     SHELL
   end
 end

@@ -6,8 +6,7 @@ metadata:
 spec:
   selector:
     app: wisecow-app
-  type: NodePort
+  type: ClusterIP
   ports:
-    - port: 4499
+    - port: 80
       targetPort: 4499
-      nodePort: 31000  # Access via http://<node-ip>:31000
