@@ -2,5 +2,12 @@
 .git
 .vagrant
 vagrantfile
-k8s
+k8s-manifests
+
 wisecow-argo-application.yaml
+app-health-checker.sh
+backup-script.sh
+clusterissuer.yaml
+Health-Monitoring-Script.sh
+
+

@@ -1,0 +1,20 @@
+apiVersion: security.kubearmor.com/v1
+kind: KubeArmorPolicy
+metadata:
+  name: block-shadow
+  namespace: wisecow
+spec:
+  severity: 5
+  selector:
+    matchLabels:
+      app: wisecow-app
+  file:
+    matchDirectories:
+      - dir: /etc/
+        recursive: true
+    matchPaths:
+      - path: /etc/shadow
+  action: Block
+
+
+

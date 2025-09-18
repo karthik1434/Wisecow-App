@@ -3,6 +3,8 @@ kind: Ingress
 metadata:
   name: wisecow-ingress
   namespace: wisecow
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod" 
 spec:
   ingressClassName: nginx
   tls:
