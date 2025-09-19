@@ -64,47 +64,47 @@ Vagrant.configure("2") do |config|
       done
       echo "Calico is ready!"
 
-      #  # --- Install Helm ---
-      # curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-      # helm version
+       # --- Install Helm ---
+      curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      helm version
 
-      # # --- Setup cert-manager repo ---
-      # helm repo add jetstack https://charts.jetstack.io
-      # helm repo update
+      # --- Setup cert-manager repo ---
+      helm repo add jetstack https://charts.jetstack.io
+      helm repo update
 
-      # # --- Install cert-manager CRDs ---
-      # sudo -u vagrant kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.1/cert-manager.crds.yaml
+      # --- Install cert-manager CRDs ---
+      sudo -u vagrant kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.1/cert-manager.crds.yaml
 
-      # # --- Install cert-manager via Helm ---
-      # helm install cert-manager jetstack/cert-manager \
-      #   --namespace cert-manager --create-namespace \
-      #   --version v1.14.1
+      # --- Install cert-manager via Helm ---
+      helm install cert-manager jetstack/cert-manager \
+        --namespace cert-manager --create-namespace \
+        --version v1.14.1
 
-      # echo "=== Waiting for cert-manager pods ==="
-      # until [ $(sudo -u vagrant kubectl get pods -n cert-manager --no-headers 2>/dev/null | wc -l) -gt 0 ] && \
-      #       [ $(sudo -u vagrant kubectl get pods -n cert-manager -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -c false || true) -eq 0 ]; do
-      #   echo "Still waiting for cert-manager..."
-      #   sleep 5
-      # done
-      # echo "cert-manager is ready!"
+      echo "=== Waiting for cert-manager pods ==="
+      until [ $(sudo -u vagrant kubectl get pods -n cert-manager --no-headers 2>/dev/null | wc -l) -gt 0 ] && \
+            [ $(sudo -u vagrant kubectl get pods -n cert-manager -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -c false || true) -eq 0 ]; do
+        echo "Still waiting for cert-manager..."
+        sleep 5
+      done
+      echo "cert-manager is ready!"
 
-      # # Add ingress-nginx repo
-      # helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-      # helm repo update
+      # Add ingress-nginx repo
+      helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      helm repo update
 
-      # # Install ingress-nginx via Helm
-      # helm install ingress-nginx ingress-nginx/ingress-nginx \
-      #   --namespace ingress-nginx --create-namespace
+      # Install ingress-nginx via Helm
+      helm install ingress-nginx ingress-nginx/ingress-nginx \
+        --namespace ingress-nginx --create-namespace
 
-      # echo "=== Waiting for ingress-nginx controller pod ==="
-      # until [ $(kubectl get pods -n ingress-nginx -l app.kubernetes.io/component=controller --no-headers 2>/dev/null | wc -l) -gt 0 ] && \
-      #       [ $(kubectl get pods -n ingress-nginx -l app.kubernetes.io/component=controller -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -c false || true) -eq 0 ]; do
-      #   echo "Ingress controller not ready, sleeping..."
-      #   sleep 5
-      # done
-      # echo "Ingress-nginx is ready!"
+      echo "=== Waiting for ingress-nginx controller pod ==="
+      until [ $(kubectl get pods -n ingress-nginx -l app.kubernetes.io/component=controller --no-headers 2>/dev/null | wc -l) -gt 0 ] && \
+            [ $(kubectl get pods -n ingress-nginx -l app.kubernetes.io/component=controller -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -c false || true) -eq 0 ]; do
+        echo "Ingress controller not ready, sleeping..."
+        sleep 5
+      done
+      echo "Ingress-nginx is ready!"
 
-      # sudo -u vagrant kubectl apply -f /vagrant/clusterissuer.yaml
+      sudo -u vagrant kubectl apply -f /vagrant/clusterissuer.yaml
 
 
       # Install Argo CD (minimal)
@@ -120,39 +120,39 @@ Vagrant.configure("2") do |config|
       echo "Argo CD is ready!"
 
 
-      # echo "=== Installing KubeArmor Operator ==="
-      # sudo -u vagrant helm repo add kubearmor https://kubearmor.github.io/charts
-      # sudo -u vagrant helm repo update
+      echo "=== Installing KubeArmor Operator ==="
+      sudo -u vagrant helm repo add kubearmor https://kubearmor.github.io/charts
+      sudo -u vagrant helm repo update
 
-      # sudo -u vagrant helm upgrade --install kubearmor-operator kubearmor/kubearmor-operator \
-      #   -n kubearmor --create-namespace
+      sudo -u vagrant helm upgrade --install kubearmor-operator kubearmor/kubearmor-operator \
+        -n kubearmor --create-namespace
 
-      # # Wait until KubeArmor operator pod is ready
-      # echo "=== Waiting for KubeArmor pods ==="
-      # until [ $(sudo -u vagrant kubectl get pods -n kubearmor --no-headers 2>/dev/null | wc -l) -gt 0 ] && \
-      #       [ $(sudo -u vagrant kubectl get pods -n kubearmor -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -c false || true) -eq 0 ]; do
-      #   echo "KubeArmor not ready, sleeping..."
-      #   sleep 5
-      # done
-      # echo "KubeArmor is ready!"
+      # Wait until KubeArmor operator pod is ready
+      echo "=== Waiting for KubeArmor pods ==="
+      until [ $(sudo -u vagrant kubectl get pods -n kubearmor --no-headers 2>/dev/null | wc -l) -gt 0 ] && \
+            [ $(sudo -u vagrant kubectl get pods -n kubearmor -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -c false || true) -eq 0 ]; do
+        echo "KubeArmor not ready, sleeping..."
+        sleep 5
+      done
+      echo "KubeArmor is ready!"
 
-      # # Apply sample config to deploy DaemonSets
-      # sudo -u vagrant kubectl apply -f https://raw.githubusercontent.com/kubearmor/KubeArmor/main/pkg/KubeArmorOperator/config/samples/sample-config.yml
-      # echo "KubeArmor sample config applied ✅"
+      # Apply sample config to deploy DaemonSets
+      sudo -u vagrant kubectl apply -f https://raw.githubusercontent.com/kubearmor/KubeArmor/main/pkg/KubeArmorOperator/config/samples/sample-config.yml
+      echo "KubeArmor sample config applied ✅"
 
 
-      # # --- Generate TLS certs as vagrant user ---
-      # sudo -u vagrant openssl genrsa -out /home/vagrant/tls.key 2048
-      # sudo -u vagrant openssl req -new -x509 -key /home/vagrant/tls.key -out /home/vagrant/tls.crt -days 365 -subj "/CN=wisecow.local/O=wisecow"
+      # --- Generate TLS certs as vagrant user ---
+      sudo -u vagrant openssl genrsa -out /home/vagrant/tls.key 2048
+      sudo -u vagrant openssl req -new -x509 -key /home/vagrant/tls.key -out /home/vagrant/tls.crt -days 365 -subj "/CN=wisecow.local/O=wisecow"
 
-      # # Create namespace + secret
-      # sudo -u vagrant kubectl create namespace wisecow || true
-      # sudo -u vagrant kubectl create secret tls wisecow-tls --cert=/home/vagrant/tls.crt --key=/home/vagrant/tls.key -n wisecow || true
+      # Create namespace + secret
+      sudo -u vagrant kubectl create namespace wisecow || true
+      sudo -u vagrant kubectl create secret tls wisecow-tls --cert=/home/vagrant/tls.crt --key=/home/vagrant/tls.key -n wisecow || true
 
-      # # --- Add hosts entry for local DNS ---
-      # if ! grep -q "wisecow.local" /etc/hosts; then
-      #   echo "192.168.56.10 wisecow.local" | sudo tee -a /etc/hosts
-      # fi
+      # --- Add hosts entry for local DNS ---
+      if ! grep -q "wisecow.local" /etc/hosts; then
+        echo "192.168.56.10 wisecow.local" | sudo tee -a /etc/hosts
+      fi
       
       # === End TLS certs ===
 
