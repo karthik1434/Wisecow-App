@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: wisecow-app
-        image: duggana1994/wisecow-app:8678be1570db7073fb50e371e6e92c157efc24af
+        image: duggana1994/wisecow-app:48d0c36b9ea61d36260b9224f261d35695767f69
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 4499
