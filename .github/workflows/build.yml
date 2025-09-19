@@ -4,6 +4,9 @@ on:
   push:
     branches: [ main ]
 
+permissions:
+  contents: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -41,8 +44,10 @@ jobs:
       # Commit and push changes back
       - name: Commit updated manifest
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add k8s-manifests/deployment.yaml
-          git commit -m "Update image tag to ${{ github.sha }}"
+          git commit -m "Update image tag to ${{ github.sha }}" || echo "No changes to commit"
           git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.G_token }}
