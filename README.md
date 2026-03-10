@@ -37,9 +37,7 @@ Python – Application health checker script
 ```
 wisecow/
 │
-├── app/
-│   └── wisecow.sh
-│
+├── wisecow.sh
 ├── Dockerfile
 ├── README.md
 │
@@ -49,18 +47,18 @@ wisecow/
 │   └── ingress.yaml
 │
 ├── argocd/
-│   └── application.yaml
+│   └── wisecow-argo-application.yaml
 │
 ├── scripts/
-│   ├── health_monitor.sh
-│   └── app_health.py
+│   ├── health_monitor-script.sh
+│   └── app-health-checker.sh
 │
 ├── security/
 │   └── kubearmor-policy.yaml
 │
 └── .github/
     └── workflows/
-        └── docker-build.yml
+        └── build.yml
 ```
 
 ---
